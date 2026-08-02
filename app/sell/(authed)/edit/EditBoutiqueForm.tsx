@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { updateShop } from "@/app/actions/seller";
 import type { Color } from "@/lib/types";
 import RequiredMark from "@/components/RequiredMark";
+import Labeled from "@/components/ui/Labeled";
 import { prepareImageFileForUpload } from "@/lib/image";
 import {
   type BusinessHours,
@@ -994,14 +995,4 @@ export default function EditBoutiqueForm({ areas, boutique }: Props) {
   );
 }
 
-function Labeled({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={{ display: "block", fontSize: 14, fontWeight: 500, marginBottom: 6 }}>
-        {label}{required ? <RequiredMark /> : null}
-      </label>
-      {children}
-    </div>
-  );
-}
 

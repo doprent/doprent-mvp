@@ -144,6 +144,8 @@ model Tag {
   swatchHex      String? @map("swatch_hex")
   /// รูป swatch สำหรับสีลาย/พื้นผิว — NULL ถ้าใช้ swatchHex แทน
   swatchImageUrl String? @map("swatch_image_url")
+  /// รูปภาพหน้าปกหมวดโอกาส — ใช้แสดงในการ์ดหมวดหมู่บนหน้าแรก (NULL = ใช้ OccasionTile สี)
+  imageUrl       String? @map("image_url")
 
   /// uuid ผู้สร้าง record (NULL = system/seed)
   createdBy String?  @map("created_by") @db.Uuid

@@ -27,7 +27,18 @@ export default async function TagGroupBindingsPage() {
             isRequired: true,
             selectionMode: true,
             isActive: true,
-            tagGroup: { select: { id: true, key: true, label: true } },
+            tagGroup: {
+              select: {
+                id: true,
+                key: true,
+                label: true,
+                tags: {
+                  where: { isActive: true },
+                  select: { id: true, key: true, label: true, imageUrl: true },
+                  orderBy: { key: "asc" as const },
+                },
+              },
+            },
           },
         },
       },
@@ -59,7 +70,15 @@ export default async function TagGroupBindingsPage() {
             isRequired: b.isRequired,
             selectionMode: b.selectionMode as "single" | "multi",
             isActive: b.isActive,
-            tagGroup: b.tagGroup,
+            tagGroup: { id: b.tagGroup.id, key: b.tagGroup.key, label: b.tagGroup.label },
+            occasionTags: b.tagGroup.key === "occasion"
+              ? b.tagGroup.tags.map((tag) => ({
+                  id: tag.id,
+                  key: tag.key,
+                  label: tag.label,
+                  imageUrl: tag.imageUrl ?? null,
+                }))
+              : undefined,
           }));
 
           return (

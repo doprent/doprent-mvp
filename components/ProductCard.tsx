@@ -6,6 +6,7 @@ import DistanceBadge from "./DistanceBadge";
 import StarRating from "./StarRating";
 import { hasMultipleRates, startingPerDay } from "@/lib/pricing";
 import { type Product } from "@/lib/types";
+import { productPath } from "@/lib/product-url";
 
 type Props = {
   product: Product;
@@ -23,7 +24,7 @@ export default function ProductCard({ product, variant = 0, savedSet, isLoggedIn
 
   return (
     <div className="card card-surface product-card" style={{ position: "relative" }}>
-      <Link href={`/product/${product.slug}`} style={{ display: "block", cursor: "pointer" }}>
+      <Link href={product.tag_code ? productPath({ slug: product.slug, tag_code: product.tag_code }) : `/product/${product.slug}`} style={{ display: "block", cursor: "pointer" }}>
         <div
           className="pc-media media"
           style={{

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ProductArt } from "@/components/ProductArt";
 import Gallery from "@/components/Gallery";
 import DistanceBadge from "@/components/DistanceBadge";
@@ -10,14 +10,15 @@ import ShareButton from "@/components/ShareButton";
 import ShopSocialLinks from "@/components/ShopSocialLinks";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import DateRangePicker, { type VariantOption } from "@/components/DateRangePicker";
-import { getCurrentUser } from "@/lib/auth";
 import {
   getShopBySlug,
   getProductBySlug,
+  getProductByTagCode,
   listBlackouts,
   listOccasions,
   listSimilarProducts,
 } from "@/lib/products";
+import { productPath, parseProductParam } from "@/lib/product-url";
 import { hasMultipleRates, startingPerDay } from "@/lib/pricing";
 import { COLOR_LABELS_TH, sizeLabel, formatVariantSizes } from "@/lib/types";
 import { db } from "@/lib/db";
@@ -29,20 +30,36 @@ import {
 } from "@/lib/booking-policy";
 import { parseBusinessHours } from "@/lib/hours";
 
-export const dynamic = "force-dynamic";
+// ISR: revalidate every 5 minutes. Auth-aware UI (SaveButton, DateRangePicker
+// booking CTA) is hydrated client-side via /api/me — no user data needed here.
+export const revalidate = 300;
+
+// Opt the dynamic [id] segment into ISR (on-demand cached) instead of the
+// default per-request dynamic rendering. Empty list = nothing prebuilt at build
+// time; pages render on first request, then are cached for `revalidate` seconds.
+export function generateStaticParams() {
+  return [];
+}
 
 type Params = { id: string }; // route param is actually slug (folder name kept for compat)
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://doprent.com";
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const dress = await getProductBySlug(decodeURIComponent(params.id));
+  const parsed = parseProductParam(params.id);
+  // Prefer tagCode lookup (fast, stable); fall back to slug.
+  const dress = parsed.tagCode
+    ? ((await getProductByTagCode(parsed.tagCode)) ?? (await getProductBySlug(parsed.slug)))
+    : await getProductBySlug(parsed.slug);
   if (!dress) {
     return { title: "ไม่พบชุด", robots: { index: false, follow: true } };
   }
   const title = dress.designer ? `${dress.name} · ${dress.designer}` : dress.name;
   const description = `${dress.description ?? dress.name} ค่าเช่า ฿${dress.price_per_day.toLocaleString()}/วัน · จองผ่าน LINE กับ ${dress.shop_name}`;
-  const url = `${SITE}/product/${dress.slug}`;
+  // Canonical always uses the hybrid slug-tagCode form.
+  const url = dress.tag_code
+    ? `${SITE}${productPath({ slug: dress.slug, tag_code: dress.tag_code })}`
+    : `${SITE}/product/${dress.slug}`;
   // og:image — the product's first photo so link previews (Discord/LINE/FB/X)
   // show the actual item. Image URLs are already absolute (R2/MinIO public URL).
   const ogImage = dress.images?.[0];
@@ -69,19 +86,30 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function DressPage({ params }: { params: Params }) {
-  const dress = await getProductBySlug(decodeURIComponent(params.id));
+  const parsed = parseProductParam(params.id);
+  // Prefer tagCode lookup (stable); fall back to slug.
+  let dress = parsed.tagCode
+    ? ((await getProductByTagCode(parsed.tagCode)) ?? (await getProductBySlug(parsed.slug)))
+    : await getProductBySlug(parsed.slug);
   if (!dress) notFound();
 
-  const [occasions, boutique, related, user, blackouts] = await Promise.all([
+  // 301-redirect non-canonical URLs to the hybrid form (consolidates old slug-only
+  // links and any non-canonical variant). Do not redirect inside generateMetadata.
+  if (dress.tag_code) {
+    const canonical = productPath({ slug: dress.slug, tag_code: dress.tag_code });
+    let decodedParam: string;
+    try { decodedParam = decodeURIComponent(params.id); } catch { decodedParam = params.id; }
+    if (decodedParam !== `${dress.slug}-${dress.tag_code}`) {
+      redirect(canonical);
+    }
+  }
+
+  const [occasions, boutique, related, blackouts] = await Promise.all([
     listOccasions(),
     getShopBySlug(slugify(dress.shop_name)).catch(() => null),
     listSimilarProducts(dress, 4),
-    getCurrentUser().catch(() => null),
     listBlackouts(dress.id, "all"),
   ]);
-  const savedSet = new Set<string>(user?.savedProductIds ?? []);
-  const isLoggedIn = !!user;
-  const isSaved = savedSet.has(dress.id);
 
   // Load shop policy + active bookings + shop closed dates for unavailability computation.
   // This requires the product's DB record — we fetch by id which is already resolved.
@@ -340,7 +368,9 @@ export default async function DressPage({ params }: { params: Params }) {
     };
   });
 
-  const url = `${SITE}/product/${dress.slug}`;
+  const url = dress.tag_code
+    ? `${SITE}${productPath({ slug: dress.slug, tag_code: dress.tag_code })}`
+    : `${SITE}/product/${dress.slug}`;
 
   // Get boutique-specific data from DB-fetched record (preferred), or denormalized name
   const boutiqueSlug = boutique?.slug ?? null;
@@ -430,10 +460,9 @@ export default async function DressPage({ params }: { params: Params }) {
             </h1>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
               <ShareButton url={url} title={dress.name} />
+              {/* SaveButton self-fetches isLoggedIn + saved state from /api/me */}
               <SaveButton
                 productId={dress.id}
-                initialSaved={isSaved}
-                isLoggedIn={isLoggedIn}
                 variant="detail"
               />
             </div>
@@ -604,8 +633,7 @@ export default async function DressPage({ params }: { params: Params }) {
             productId={dress.id}
             shopId={dress.shop_id}
             dressTagCode={dress.tag_code}
-            isLoggedIn={isLoggedIn}
-            loginNext={`/product/${dress.slug}`}
+            loginNext={dress.tag_code ? productPath({ slug: dress.slug, tag_code: dress.tag_code }) : `/product/${dress.slug}`}
             variants={variantOptions.length > 0 ? variantOptions : undefined}
             shopClosingTime={shopClosingTime}
             shopHoursConfigured={shopHoursConfigured}
@@ -766,7 +794,7 @@ export default async function DressPage({ params }: { params: Params }) {
           </div>
           <div className="grid-4" style={{ gap: 20 }}>
             {related.map((d, i) => (
-              <ProductCard key={d.id} product={d} variant={i} savedSet={savedSet} isLoggedIn={isLoggedIn} />
+              <ProductCard key={d.id} product={d} variant={i} />
             ))}
           </div>
         </div>

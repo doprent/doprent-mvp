@@ -9,17 +9,17 @@ import type { Blackout, Color, Occasion, OccasionKey, PriceTier, Product, Produc
  * fallback list when the tag system has no occasion tags yet.
  */
 const FALLBACK_OCCASIONS: Occasion[] = [
-  { key: "engagement", th: "งานหมั้น", en: "Engagement", color_token: "rose", sort_order: 1 },
-  { key: "wedding",    th: "งานแต่ง",  en: "Wedding",    color_token: "ivory", sort_order: 2 },
-  { key: "cocktail",   th: "ค็อกเทล",  en: "Cocktail",   color_token: "green", sort_order: 3 },
-  { key: "evening",    th: "ราตรี",    en: "Evening",    color_token: "navy",  sort_order: 4 },
-  { key: "gala",       th: "กาล่า",   en: "Gala",       color_token: "red",   sort_order: 5 },
-  { key: "party",      th: "ปาร์ตี้",  en: "Party",      color_token: "purple",sort_order: 6 },
-  { key: "work",       th: "ทำงาน",   en: "Work",       color_token: "black", sort_order: 7 },
-  { key: "casual",     th: "ลำลอง",   en: "Casual",     color_token: "blue",  sort_order: 8 },
-  { key: "thai",       th: "ชุดไทย",  en: "Thai",       color_token: "rose",  sort_order: 9 },
-  { key: "graduation", th: "รับปริญญา", en: "Graduation", color_token: "navy", sort_order: 10 },
-  { key: "costume",    th: "คอสตูม/แฟนซี", en: "Costume",  color_token: "purple", sort_order: 11 },
+  { key: "engagement", th: "งานหมั้น", en: "Engagement", color_token: "rose",   sort_order: 1,  image_url: null },
+  { key: "wedding",    th: "งานแต่ง",  en: "Wedding",    color_token: "ivory",  sort_order: 2,  image_url: null },
+  { key: "cocktail",   th: "ค็อกเทล",  en: "Cocktail",   color_token: "green",  sort_order: 3,  image_url: null },
+  { key: "evening",    th: "ราตรี",    en: "Evening",    color_token: "navy",   sort_order: 4,  image_url: null },
+  { key: "gala",       th: "กาล่า",   en: "Gala",       color_token: "red",    sort_order: 5,  image_url: null },
+  { key: "party",      th: "ปาร์ตี้",  en: "Party",      color_token: "purple", sort_order: 6,  image_url: null },
+  { key: "work",       th: "ทำงาน",   en: "Work",       color_token: "black",  sort_order: 7,  image_url: null },
+  { key: "casual",     th: "ลำลอง",   en: "Casual",     color_token: "blue",   sort_order: 8,  image_url: null },
+  { key: "thai",       th: "ชุดไทย",  en: "Thai",       color_token: "rose",   sort_order: 9,  image_url: null },
+  { key: "graduation", th: "รับปริญญา", en: "Graduation", color_token: "navy",  sort_order: 10, image_url: null },
+  { key: "costume",    th: "คอสตูม/แฟนซี", en: "Costume", color_token: "purple", sort_order: 11, image_url: null },
 ];
 
 /** Default catalog product type — preserves today's dress-only browse behavior. */
@@ -592,6 +592,12 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return mapProduct(d);
 }
 
+export async function getProductByTagCode(tagCode: string): Promise<Product | null> {
+  const d = await db.product.findUnique({ where: { tagCode }, include: PRODUCT_INCLUDE });
+  if (!d) return null;
+  return mapProduct(d);
+}
+
 /**
  * Paid sponsor strip — shops on a paid ads_tier (boost/featured).
  * Powers the home marquee as a sponsored-shop placement. Featured first,
@@ -770,7 +776,7 @@ export async function listOccasions(): Promise<Occasion[]> {
       // เฉพาะ occasion ที่มีสินค้าที่มองเห็นได้ผูกอยู่จริง (live + available)
       productTags: { some: { product: { status: "live", available: true } } },
     },
-    select: { key: true, label: true },
+    select: { key: true, label: true, imageUrl: true },
   });
   return rows
     .map((r) => {
@@ -781,6 +787,7 @@ export async function listOccasions(): Promise<Occasion[]> {
         en: meta?.en ?? r.key,
         color_token: meta?.color_token ?? ("rose" as Color),
         sort_order: meta?.sort_order ?? 99,
+        image_url: r.imageUrl ?? null,
       };
     })
     .sort((a, b) => a.sort_order - b.sort_order || a.key.localeCompare(b.key));

@@ -7,6 +7,7 @@ import { setProductStatus, toggleProductFeatured } from "@/app/actions/admin";
 import { ProductArt } from "@/components/ProductArt";
 import StatusBadge from "@/components/StatusBadge";
 import type { Color } from "@/lib/types";
+import { productPath } from "@/lib/product-url";
 
 type D = {
   id: string;
@@ -80,7 +81,7 @@ export default function ProductRow({ d }: { d: D }) {
             </div>
             <div style={{ minWidth: 0 }}>
               <Link
-                href={`/product/${d.slug}`}
+                href={d.tag_code ? productPath({ slug: d.slug, tag_code: d.tag_code }) : `/product/${d.slug}`}
                 target="_blank"
                 style={{ fontWeight: 600, fontSize: 13 }}
               >

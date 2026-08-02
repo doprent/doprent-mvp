@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { listShops, listProducts } from "@/lib/products";
+import { productPath } from "@/lib/product-url";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const dressPages: MetadataRoute.Sitemap = products.map((d) => ({
-    url: `${SITE}/product/${d.slug}`,
+    url: d.tag_code ? `${SITE}${productPath({ slug: d.slug, tag_code: d.tag_code })}` : `${SITE}/product/${d.slug}`,
     lastModified: now,
     changeFrequency: "weekly",
     priority: 0.7,

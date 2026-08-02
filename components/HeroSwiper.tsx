@@ -4,6 +4,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCards, Autoplay } from "swiper/modules";
 import Link from "next/link";
 import { ProductArt } from "@/components/ProductArt";
+import { productPath } from "@/lib/product-url";
 
 import "swiper/css";
 import "swiper/css/effect-cards";
@@ -11,6 +12,7 @@ import "swiper/css/effect-cards";
 type SlideData = {
   id: string;
   slug: string;
+  tag_code?: string;
   name: string;
   price_per_day: number;
   image: string | null;
@@ -50,7 +52,7 @@ export default function HeroSwiper({ slides }: { slides: SlideData[] }) {
         {items.map((d, i) => (
           <SwiperSlide key={d.id} className="hero-card-slide">
             {d.slug ? (
-              <Link href={`/product/${d.slug}`} className="hero-card-inner">
+              <Link href={d.tag_code ? productPath({ slug: d.slug, tag_code: d.tag_code }) : `/product/${d.slug}`} className="hero-card-inner">
                 <div className="hero-card-img">
                   {d.image ? (
                     // eslint-disable-next-line @next/next/no-img-element

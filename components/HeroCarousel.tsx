@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { productPath } from "@/lib/product-url";
 
 export type HeroItem = {
   slug: string;
+  tag_code?: string;
   name: string;
   image: string | null;
   price: number;
@@ -73,7 +75,7 @@ export default function HeroCarousel({ items }: { items: HeroItem[] }) {
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") { e.preventDefault(); next(); }
         else if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
-        else if (e.key === "Enter") router.push(`/product/${items[active].slug}`);
+        else if (e.key === "Enter") { const it = items[active]; router.push(it.tag_code ? productPath({ slug: it.slug, tag_code: it.tag_code }) : `/product/${it.slug}`); }
       }}
     >
       <div className="hc-stage">
@@ -100,7 +102,7 @@ export default function HeroCarousel({ items }: { items: HeroItem[] }) {
               aria-label={isCenter ? `เปิดดู ${it.name}` : `ไปที่ ${it.name}`}
               tabIndex={isCenter ? 0 : -1}
               onClick={() => {
-                if (isCenter) router.push(`/product/${it.slug}`);
+                if (isCenter) router.push(it.tag_code ? productPath({ slug: it.slug, tag_code: it.tag_code }) : `/product/${it.slug}`);
                 else setActive(i);
               }}
             >

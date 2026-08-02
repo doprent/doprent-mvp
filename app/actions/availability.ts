@@ -56,13 +56,13 @@ export async function toggleBlackout(
   return withActor(owner.userId, async () => {
     if (existing) {
       await db.productBlackoutDate.delete({ where: { id: existing.id } });
-      revalidatePath(`/product/${productId}`);
+      revalidatePath('/product/[id]', 'page');
       return { ok: true, blocked: false };
     } else {
       await db.productBlackoutDate.create({
         data: { productId, variantId: vid, unitId: uid, date: dateObj },
       });
-      revalidatePath(`/product/${productId}`);
+      revalidatePath('/product/[id]', 'page');
       return { ok: true, blocked: true };
     }
   });

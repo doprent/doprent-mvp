@@ -120,7 +120,7 @@ export async function updateShop(shopId: string, formData: FormData): Promise<{ 
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "ยังไม่ได้เข้าสู่ระบบ" };
 
-  const shop = await db.shop.findUnique({ where: { id: shopId }, select: { ownerId: true } });
+  const shop = await db.shop.findUnique({ where: { id: shopId }, select: { ownerId: true, slug: true } });
   if (!shop || shop.ownerId !== user.id) return { ok: false, error: "ไม่มีสิทธิ์แก้ไขร้านนี้" };
 
   const updates: Record<string, unknown> = {};
@@ -252,6 +252,9 @@ export async function updateShop(shopId: string, formData: FormData): Promise<{ 
       }
     }
     revalidatePath("/sell/dashboard");
+    // Bust the ISR cache for the public shop page so edits (name, hours,
+    // social links, etc.) are visible within the 5-minute revalidation window.
+    revalidatePath(`/shop/${shop.slug}`);
     return { ok: true };
   });
 }
@@ -716,7 +719,9 @@ export async function updateProduct(productId: string, formData: FormData): Prom
     }
 
     revalidatePath("/sell/dashboard");
-    revalidatePath(`/product/${productId}`);
+    // Route param [id] is the product slug, not the uuid. Revalidate the whole
+    // dynamic page route so the ISR-cached public detail page reflects edits.
+    revalidatePath("/product/[id]", "page");
     return { ok: true };
   });
 }
@@ -745,7 +750,9 @@ export async function updateProductPriceTiers(productId: string, tiers: PriceTie
       data: tiers.map((t) => ({ productId, minDays: t.min, pricePerDay: t.per_day })),
     });
     revalidatePath("/sell/dashboard");
-    revalidatePath(`/product/${productId}`);
+    // Route param [id] is the product slug, not the uuid. Revalidate the whole
+    // dynamic page route so the ISR-cached public detail page reflects edits.
+    revalidatePath("/product/[id]", "page");
     return { ok: true };
   });
 }
@@ -769,7 +776,9 @@ export async function toggleProductAvailable(productId: string): Promise<void> {
 
   revalidatePath("/sell/products");
   revalidatePath("/sell/dashboard");
-  revalidatePath(`/product/${productId}`);
+  // Route param [id] is the product slug, not the uuid. Revalidate the whole
+  // dynamic page route so the ISR-cached public detail page reflects edits.
+  revalidatePath("/product/[id]", "page");
 }
 
 // A booking that still ties up the product. Anything NOT in this terminal set
@@ -821,7 +830,9 @@ export async function deleteProduct(
 
   revalidatePath("/sell/products");
   revalidatePath("/sell/dashboard");
-  revalidatePath(`/product/${productId}`);
+  // Route param [id] is the product slug, not the uuid. Revalidate the whole
+  // dynamic page route so the ISR-cached public detail page reflects edits.
+  revalidatePath("/product/[id]", "page");
   return { ok: true };
 }
 

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { addAddress, updateAddress, addBankAccount, createBooking } from "@/app/actions/bookings";
+import { createBooking } from "@/app/actions/bookings";
+import { addAddress, updateAddress } from "@/app/actions/addresses";
+import { addBankAccount } from "@/app/actions/bank-accounts";
 import { startProgress, doneProgress } from "@/lib/progress";
 import { priceForNights } from "@/lib/pricing";
 import type { Address, BankAccount, PriceTier } from "@/lib/types";

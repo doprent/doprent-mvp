@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { addAddress, updateAddress, createBooking } from "@/app/actions/bookings";
+import { createBooking } from "@/app/actions/bookings";
+import { addAddress, updateAddress } from "@/app/actions/addresses";
 import { startProgress, doneProgress } from "@/lib/progress";
 import type { Address } from "@/lib/types";
 import type { BusinessHours } from "@/lib/hours";

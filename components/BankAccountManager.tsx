@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addBankAccount, updateBankAccount, deleteBankAccount, setDefaultBankAccount } from "@/app/actions/bookings";
+import { addBankAccount, updateBankAccount, deleteBankAccount, setDefaultBankAccount } from "@/app/actions/bank-accounts";
 import { useConfirm } from "@/components/ConfirmProvider";
 import type { BankAccount } from "@/lib/types";
 

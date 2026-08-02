@@ -7,6 +7,7 @@ import { type PriceTier, sizeLabel } from "@/lib/types";
 import { remainingForRange } from "@/lib/booking-policy";
 import { fmtThai, MONTHS_TH_FULL, DAYS_TH } from "@/lib/date-th";
 import { useCart } from "@/lib/cart";
+import { getMe } from "./HeaderUserSlot";
 /** A size variant available for booking on the product. */
 export type VariantOption = {
   id: string;
@@ -196,6 +197,17 @@ export default function DateRangePicker({
   productSlug,
   productImage,
 }: Props) {
+  // When isLoggedIn is not provided by the server (ISR pages), self-fetch from
+  // /api/me. The shared getMe() singleton ensures only one fetch per page.
+  const [resolvedIsLoggedIn, setResolvedIsLoggedIn] = useState(isLoggedIn ?? false);
+  useEffect(() => {
+    if (isLoggedIn !== undefined) {
+      setResolvedIsLoggedIn(isLoggedIn);
+      return;
+    }
+    getMe().then((d) => setResolvedIsLoggedIn(!!d.user));
+  }, [isLoggedIn]);
+
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
 
@@ -709,7 +721,7 @@ export default function DateRangePicker({
 
       {nights > 0 && !isInvalid ? (
         <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
-          {isLoggedIn && productId ? (
+          {resolvedIsLoggedIn && productId ? (
             <Link
               href={checkoutHref}
               onClick={(e) => { if (timeIncomplete) { e.preventDefault(); return; } trackAndGo(e); }}

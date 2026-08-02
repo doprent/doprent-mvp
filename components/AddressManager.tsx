@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addAddress, updateAddress, deleteAddress, setDefaultAddress } from "@/app/actions/bookings";
+import { addAddress, updateAddress, deleteAddress, setDefaultAddress } from "@/app/actions/addresses";
 import { useConfirm } from "@/components/ConfirmProvider";
 import type { Address } from "@/lib/types";
 

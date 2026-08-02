@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { getMe } from "./HeaderUserSlot";
 
 type Variant = "primary" | "secondary" | "inline";
 
@@ -48,6 +49,16 @@ export default function LineButton({
   isLoggedIn,
   loginNext,
 }: Props) {
+  // Self-fetch login state when not provided by server (ISR/cached pages).
+  const [resolvedIsLoggedIn, setResolvedIsLoggedIn] = useState(isLoggedIn ?? false);
+  useEffect(() => {
+    if (isLoggedIn !== undefined) {
+      setResolvedIsLoggedIn(isLoggedIn);
+      return;
+    }
+    getMe().then((d) => setResolvedIsLoggedIn(!!d.user));
+  }, [isLoggedIn]);
+
   // useCallback must always run (rules of hooks) — kept outside the branch.
   const trackClick = useCallback(() => {
     try {
@@ -87,7 +98,7 @@ export default function LineButton({
       } as React.CSSProperties);
 
   // --- Anonymous path: never expose the LINE href ---
-  if (!isLoggedIn || !href) {
+  if (!resolvedIsLoggedIn || !href) {
     const next = loginNext || "/";
     return (
       <Link

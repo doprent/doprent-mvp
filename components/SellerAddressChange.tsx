@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { reviewAddressChange, confirmAddressChange } from "@/app/actions/bookings";
+import { reviewAddressChange, confirmAddressChange } from "@/app/actions/addresses";
 
 type PendingAddress = {
   recipientName: string | null;

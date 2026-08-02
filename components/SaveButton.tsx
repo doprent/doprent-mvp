@@ -1,39 +1,70 @@
 "use client";
 
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
 import { toggleSavedProduct } from "@/app/actions/saved";
+import { getMe } from "./HeaderUserSlot";
 
 type Props = {
   productId: string;
+  /**
+   * Optimistic initial saved state from server. When undefined (ISR/cached
+   * pages that cannot read session server-side) the component self-fetches
+   * from /api/me on the client.
+   */
   initialSaved?: boolean;
+  /**
+   * Whether the viewer is logged in. When undefined the component self-fetches
+   * from /api/me on the client.
+   */
   isLoggedIn?: boolean;
   variant?: "card" | "detail";
 };
 
 export default function SaveButton({
   productId,
-  initialSaved = false,
-  isLoggedIn = false,
+  initialSaved,
+  isLoggedIn,
   variant = "card",
 }: Props) {
   const router = useRouter();
-  const [saved, setSaved] = useState(initialSaved);
+  const [saved, setSaved] = useState(initialSaved ?? false);
   const [bump, setBump] = useState(false);
   const [isPending, startTransition] = useTransition();
+  // Tracks whether we have real auth data (either from props or self-fetch)
+  const [loggedIn, setLoggedIn] = useState(isLoggedIn ?? false);
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    // Props already provided by server — nothing to fetch
+    if (isLoggedIn !== undefined && initialSaved !== undefined) {
+      setLoggedIn(isLoggedIn);
+      setSaved(initialSaved);
+      return;
+    }
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    getMe().then((d) => {
+      const li = !!d.user;
+      setLoggedIn(li);
+      if (li && d.user) {
+        setSaved(d.user.savedProductIds.includes(productId));
+      }
+    });
+  }, [isLoggedIn, initialSaved, productId]);
 
   function onClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!isLoggedIn) {
+    if (!loggedIn) {
       router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 
     // optimistic
     setSaved((s) => {
-      if (!s) setBump(true); // pop only when newly saved
+      if (!s) setBump(true);
       return !s;
     });
     startTransition(async () => {

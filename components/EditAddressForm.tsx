@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { editBookingAddress } from "@/app/actions/bookings";
+import { editBookingAddress } from "@/app/actions/addresses";
 
 type Props = {
   bookingId: string;

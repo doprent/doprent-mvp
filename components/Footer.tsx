@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { t, type Locale } from "@/lib/i18n";
-import { getServerLocale } from "@/lib/i18n-server";
 import { version } from "@/package.json";
 import { getSiteSettings, SETTING_KEYS } from "@/lib/site-settings";
 import LocaleToggle from "./LocaleToggle";
 import FooterVariantSwitch from "./FooterVariantSwitch";
 
+// Locale is not read server-side here (that would call cookies() and make
+// every page dynamic). Footer text defaults to Thai; LocaleToggle reads the
+// NEXT_LOCALE cookie client-side and re-renders if the user switches.
+const STATIC_LOCALE: Locale = "th";
+
 export default async function Footer() {
-  const locale = getServerLocale();
+  const locale = STATIC_LOCALE;
   const year = new Date().getFullYear();
   const settings = await getSiteSettings();
   const lineUrl = settings[SETTING_KEYS.LINE_URL];

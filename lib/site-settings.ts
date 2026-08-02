@@ -14,9 +14,14 @@ const DEFAULTS: Record<string, string> = {
 };
 
 export const getSiteSettings = cache(async () => {
-  const rows = await db.siteSetting.findMany();
   const map: Record<string, string> = { ...DEFAULTS };
-  for (const r of rows) map[r.key] = r.value;
+  try {
+    const rows = await db.siteSetting.findMany();
+    for (const r of rows) map[r.key] = r.value;
+  } catch {
+    // Fall back to defaults when DB is unreachable (e.g. during static prerender
+    // at build time). The real values are served at runtime via ISR/dynamic pages.
+  }
   return map;
 });
 

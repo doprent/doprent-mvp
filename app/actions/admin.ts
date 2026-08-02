@@ -539,6 +539,35 @@ export async function addAdminByEmail(formData: FormData): Promise<{ ok: boolean
 }
 
 // ---------------------------------------------------------------------------
+// Tag image management
+// ---------------------------------------------------------------------------
+
+/**
+ * อัปเดต imageUrl ของแท็กหมวดโอกาส (admin only).
+ * imageUrl = null → ลบรูปภาพออก
+ */
+export async function setTagImage(
+  tagId: string,
+  imageUrl: string | null,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth;
+
+  const tag = await db.tag.findUnique({ where: { id: tagId }, select: { id: true } });
+  if (!tag) return { ok: false, error: "ไม่พบแท็ก" };
+
+  await withActor(auth.userId, () =>
+    db.tag.update({
+      where: { id: tagId },
+      data: { imageUrl },
+    }),
+  );
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
 // Legacy aliases — keep old names working during transition
 // ---------------------------------------------------------------------------
 /** @deprecated use setShopStatus */

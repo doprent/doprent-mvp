@@ -8,12 +8,19 @@ import VerifiedBadge from "@/components/VerifiedBadge";
 import StarRating from "@/components/StarRating";
 import ReviewList from "@/components/ReviewList";
 import ShopSocialLinks from "@/components/ShopSocialLinks";
-import { getCurrentUser } from "@/lib/auth";
 import { getShopBySlug, listProductsByShop } from "@/lib/products";
 import { getShopReviews } from "@/lib/reviews";
 import { parseBusinessHours, formatBusinessHoursLines } from "@/lib/hours";
 
-export const dynamic = "force-dynamic";
+// ISR: revalidate every 5 minutes. Auth-aware UI (LineButton, SaveButton) is
+// hydrated client-side via /api/me — no user session needed at render time.
+export const revalidate = 300;
+
+// Opt the dynamic [slug] segment into ISR (on-demand cached) instead of the
+// default per-request dynamic rendering.
+export function generateStaticParams() {
+  return [];
+}
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://doprent.com";
 
@@ -67,13 +74,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function BoutiquePage({ params }: { params: Params }) {
   const b = await getShopBySlug(decodeSlug(params.slug));
   if (!b) notFound();
-  const [dresses, user, reviews] = await Promise.all([
+  const [dresses, reviews] = await Promise.all([
     listProductsByShop(b.id),
-    getCurrentUser().catch(() => null),
     getShopReviews(b.id),
   ]);
-  const savedSet = new Set<string>(user?.savedProductIds ?? []);
-  const isLoggedIn = !!user;
 
   return (
     <div className="container" style={{ paddingBottom: 80 }}>
@@ -130,13 +134,14 @@ export default async function BoutiquePage({ params }: { params: Params }) {
             </div>
           ) : null}
           {b.is_open ? (
+            /* LineButton self-fetches isLoggedIn from /api/me; href is always
+               passed so the URL is available once auth resolves client-side. */
             <LineButton
-              href={isLoggedIn ? b.line_url : null}
+              href={b.line_url}
               label="ทักร้านทาง LINE"
               variant="primary"
               source="boutique_primary"
               shopId={b.id}
-              isLoggedIn={isLoggedIn}
               loginNext={`/shop/${b.slug}`}
             />
           ) : null}
@@ -247,7 +252,7 @@ export default async function BoutiquePage({ params }: { params: Params }) {
       ) : (
         <div className="grid-3 products-grid-wide" style={{ gap: 20 }}>
           {dresses.map((d, i) => (
-            <ProductCard key={d.id} product={d} variant={i} savedSet={savedSet} isLoggedIn={isLoggedIn} />
+            <ProductCard key={d.id} product={d} variant={i} />
           ))}
         </div>
       )}

@@ -236,7 +236,16 @@ export default async function HomePage({
                     data-active={activeOcc === o.key ? "true" : undefined}
                   >
                     <span className="hr-occ-tile">
-                      <OccasionTile color={o.color_token} />
+                      {o.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={o.image_url}
+                          alt={label}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", borderRadius: "inherit" }}
+                        />
+                      ) : (
+                        <OccasionTile color={o.color_token} />
+                      )}
                     </span>
                     <span className="hr-occ-label">{label}</span>
                   </Link>

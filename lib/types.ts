@@ -126,6 +126,7 @@ export type Occasion = {
   en: string;
   color_token: Color;
   sort_order: number;
+  image_url: string | null;
 };
 
 /** Product type reference (e.g. "dress", "suit") — mirrors product_types. */

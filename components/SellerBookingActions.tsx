@@ -10,8 +10,8 @@ import {
   markCompleted,
   markReturned,
   rejectBooking,
-  sellerUploadRefundSlip,
 } from "@/app/actions/bookings";
+import { sellerUploadRefundSlip } from "@/app/actions/booking-disputes";
 import { startProgress, doneProgress } from "@/lib/progress";
 import type { BookingStatus } from "@/lib/types";
 import type { PaymentChannel } from "@/lib/payments";

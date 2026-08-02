@@ -10,7 +10,7 @@ import {
   adminRejectSlip,
   recordRefund,
 } from "@/app/actions/admin";
-import { adminResolveReturnDispute } from "@/app/actions/bookings";
+import { adminResolveReturnDispute } from "@/app/actions/booking-disputes";
 import type { BookingStatus } from "@/lib/types";
 import { BOOKING_STATUS_META } from "@/lib/bookings";
 import { useConfirm, usePrompt } from "@/components/ConfirmProvider";
